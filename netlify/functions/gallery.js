@@ -82,14 +82,18 @@ exports.handler = async function (event) {
       return cors({ error: 'कम से कम एक फ़ोटो आवश्यक है।' }, 400);
     }
 
-    const items = rawItems.map((it) => {
+    const items = [];
+    for (let i = 0; i < rawItems.length; i++) {
+      const it = rawItems[i];
       let img = typeof it.img === 'string' ? it.img : '';
-      if (img.length > MAX_IMG_LEN) img = '';
-      return {
+      if (img.length > MAX_IMG_LEN) {
+        return cors({ error: 'फ़ोटो ' + (i + 1) + ' का आकार बहुत बड़ा है — कृपया छोटी/compressed फ़ोटो चुनें।' }, 413);
+      }
+      items.push({
         img,
         caption: sanitizeText(it.caption, MAX_CAPTION_LEN),
-      };
-    });
+      });
+    }
 
     const gallery = { items, updatedAt: new Date().toISOString() };
     await store.setJSON(BLOB_KEY, gallery);

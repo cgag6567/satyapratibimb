@@ -37,7 +37,7 @@
 2) इस पूरे फ़ोल्डर की सभी फ़ाइलें और फ़ोल्डर एक साथ खींचकर छोड़ें —
    index.html, manifest.json, sw.js, icon-192.png, icon-512.png,
    netlify.toml, और पूरा "netlify" फ़ोल्डर (उसके अंदर functions/posts.js)
-3) नीचे "Commit changes" दबाएँ
+3) नीचे "Commit changes" दबाएँ 
 
 **Step 3 — Netlify से जोड़ें**
 1) https://app.netlify.com पर लॉगिन करें

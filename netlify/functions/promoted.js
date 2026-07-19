@@ -2,15 +2,16 @@ const { getStore } = require('@netlify/blobs');
 
 const STORE_NAME = 'satya-promoted-news';
 const BLOB_KEY = 'promoted.json';
-const EDITOR_PIN = 'Satya@2026';
+const EDITOR_PIN = 'Satya@2026'; // यही PIN जो index.html में EDITOR_PIN है — दोनों जगह एक जैसा रखें
 
 const MAX_ITEMS = 50;
+const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 घंटे बाद अपने आप हट जाएँ
 const MAX_TITLE_LEN = 200;
 const MAX_SUMMARY_LEN = 500;
 const MAX_CATEGORY_LEN = 60;
 const MAX_AUTHOR_LEN = 100;
 const MAX_CITY_LEN = 80;
-const MAX_PHOTO_LEN = 900000;
+const MAX_PHOTO_LEN = 900000; // ~650KB decoded
 
 function getPromotedStore() {
   const siteID = process.env.BLOBS_SITE_ID;
@@ -63,17 +64,29 @@ exports.handler = async function (event) {
   const loadItems = async () => {
     try {
       const data = await store.get(BLOB_KEY, { type: 'json' });
-      return Array.isArray(data) ? data : [];
+      const items = Array.isArray(data) ? data : [];
+      const now = Date.now();
+      const fresh = items.filter((it) => {
+        const age = now - new Date(it.createdAt).getTime();
+        return isFinite(age) ? age < MAX_AGE_MS : true;
+      });
+      if (fresh.length !== items.length) {
+        // पुराने (24 घंटे से ज़्यादा) आइटम हमेशा के लिए हटा दें
+        await store.setJSON(BLOB_KEY, fresh);
+      }
+      return fresh;
     } catch (e) {
       return [];
     }
   };
 
+  // ── GET: सभी प्रकाशित (promoted) पाठक-समाचार लौटाएँ ──
   if (event.httpMethod === 'GET') {
     const items = await loadItems();
     return cors({ items });
   }
 
+  // ── POST: नया प्रकाशित समाचार जोड़ें — सिर्फ़ संपादक PIN के साथ ──
   if (event.httpMethod === 'POST') {
     if (!isPinValid(event)) {
       return cors({ error: 'अस्वीकृत — संपादक PIN ग़लत या अनुपस्थित है।' }, 401);
@@ -119,6 +132,7 @@ exports.handler = async function (event) {
     return cors({ item }, 201);
   }
 
+  // ── DELETE: कोई प्रकाशित समाचार हटाएँ — सिर्फ़ संपादक PIN के साथ ──
   if (event.httpMethod === 'DELETE') {
     if (!isPinValid(event)) {
       return cors({ error: 'अस्वीकृत — संपादक PIN ग़लत या अनुपस्थित है।' }, 401);

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vaak-richa-new.netlify.app/sitemap.xml
+
+# RSS Feed
+# https://vaak-richa-new.netlify.app/rss.xml

@@ -1,6 +1,6 @@
 const { getStore } = require('@netlify/blobs');
 
-const STORE_NAME = 'satya-news';
+const STORE_NAME = 'satya-news'; 
 const BLOB_KEY = 'news.json';
 const EDITOR_PIN = 'Satya@2026';
 

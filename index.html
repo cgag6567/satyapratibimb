@@ -6627,7 +6627,8 @@ async function loadSidebarBriefs(dateStr, dateEn) {
 // BBC हिंदी (+ अन्य स्रोत) से संक्षिप्त समाचार fetch करके DOM में दिखाएँ + HTML में embed करें
 async function _fetchAndEmbedBriefs(dateStr, dateEn, renderBriefs) {
   /* rss2json proxy — अगर मुख्य R2J variable अभी तक load नहीं हुआ तो खुद का उपयोग करें */
-  const _r2j = (typeof R2J !== 'undefined') ? R2J : 'https://api.rss2json.com/v1/api.json?rss_url=';
+  const _r2j = (typeof R2J !== 'undefined') ? R2J
+             : ((/^https?:$/.test(location.protocol) ? '' : 'https://satyapratibimb.netlify.app') + '/.netlify/functions/rssproxy?rss_url=');
 
   /* BBC हिंदी मुख्य स्रोत — fallback के साथ ताकि कभी BBC down हो तो भी ख़बरें आएँ */
   const BRIEF_SOURCES = [
@@ -7071,9 +7072,12 @@ document.getElementById('pin-modal-overlay').addEventListener('click', function(
    No API key. No proxy needed. Works in any browser.
    =================================================================== */
 
-/* rss2json.com converts any RSS to JSON with CORS headers built-in.
-   Free tier: 10,000 req/day, no sign-up needed for basic use.         */
-const R2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
+/* ✅ FIX: rss2json.com अब 403 (Forbidden) दे रहा था, इसलिए कोई खबर नहीं आ रही थी।
+   अब अपना खुद का Netlify Function (netlify/functions/rssproxy.js) RSS पढ़कर
+   वही rss2json-जैसा JSON लौटाता है — कोई API key / लिमिट नहीं।
+   अगर पेज डाउनलोड करके file:// से खोला जाए तो लाइव साइट का फ़ंक्शन इस्तेमाल होगा। */
+const R2J = (/^https?:$/.test(location.protocol) ? '' : 'https://satyapratibimb.netlify.app')
+          + '/.netlify/functions/rssproxy?rss_url=';
 
 /* ---------- NEWS SOURCES (all fetched in parallel) ---------- */
 const NEWS_SOURCES = [
@@ -7151,7 +7155,7 @@ function parseR2J(data, sourceName){
   });
 }
 
-/* ---------- FETCH ONE SOURCE (rss2json) ---------- */
+/* ---------- FETCH ONE SOURCE (अपना /.netlify/functions/rss) ---------- */
 async function fetchOne(src){
   const res = await fetch(src.url, { signal: AbortSignal.timeout(10000) });
   if(!res.ok) throw new Error('HTTP ' + res.status);

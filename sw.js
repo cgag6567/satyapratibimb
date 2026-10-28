@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   सत्य प्रतिबिम्ब — Service Worker v2
+   सत्य प्रतिबिम्ब — Service Worker v3
    HTML/navigation: नेटवर्क-पहले (हमेशा ताज़ा कोड)
    बाकी static assets: cache-पहले (तेज़)
    API (shared posts, RSS): हमेशा सीधा नेटवर्क
 ═══════════════════════════════════════════════ */
-const CACHE = 'satya-v2';
+const CACHE = 'satya-v3';
 
 const PRECACHE = [
   './manifest.json',
@@ -38,7 +38,7 @@ self.addEventListener('fetch', event => {
   const url = event.request.url;
 
   /* शेयर्ड पोस्ट API और समाचार फ़ीड — कभी cache नहीं, हमेशा live नेटवर्क */
-  if (url.includes('rss2json.com') || url.includes('rss') || url.includes('news.google') || url.includes('/.netlify/functions/')) {
+  if (url.includes('/.netlify/functions/') || url.includes('rss2json.com') || url.includes('news.google')) {
     return;
   }
 

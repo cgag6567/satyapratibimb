@@ -7,7 +7,10 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# साझा पोस्ट हमेशा ताज़ा रहें (कैश नहीं)
 [[headers]]
-  for = "/.netlify/functions/*"
+  for = "/.netlify/functions/posts"
   [headers.values]
     Cache-Control = "no-store"
+
+# NOTE: /.netlify/functions/rssproxy खुद अपने cache हेडर भेजता है (CDN पर 5 मिनट कैश)

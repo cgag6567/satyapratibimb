@@ -3823,7 +3823,51 @@ window.__embeddedBriefsDate=new Date().toISOString().slice(0,10);
 <footer>
   <strong>सत्य प्रतिबिम्ब</strong> — सत्य की आवाज़, देश की पहचान<br>
   <span style="font-size:11px;margin-top:4px;display:block">© 2026 सत्य प्रतिबिम्ब प्रकाशन समूह | संपादक: डा. अनन्य गोस्वामी | RNI: RAJHIN/2002/12345 | सर्वाधिकार सुरक्षित</span>
+  <span style="font-size:11px;margin-top:6px;display:block;opacity:.85">इस साइट पर दिखने वाली खबरें स्रोत सहित उनके मूल प्रकाशकों की हैं। &nbsp;|&nbsp;
+    <a href="#" onclick="openTakedown();return false" style="color:inherit;text-decoration:underline;font-weight:700">📩 हटाने का अनुरोध / संपर्क</a></span>
 </footer>
+
+<!-- ══ हटाने का अनुरोध (Takedown) ══════════════════════════ -->
+<div id="takedown-modal" style="display:none;position:fixed;inset:0;background:rgba(10,6,3,.75);z-index:10050;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeTakedown()">
+  <div role="dialog" aria-modal="true" aria-labelledby="td-title" style="background:var(--paper);max-width:520px;width:100%;max-height:90vh;overflow-y:auto;border-top:4px solid var(--red);padding:22px 24px;font-family:'Noto Sans Devanagari',sans-serif;color:var(--ink);position:relative">
+    <button onclick="closeTakedown()" aria-label="बंद करें" style="position:absolute;top:8px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink)">✕</button>
+    <div id="td-title" style="font-weight:800;font-size:20px;margin-bottom:10px">📩 हटाने का अनुरोध / संपर्क</div>
+    <p style="font-size:14px;line-height:1.7;margin-bottom:10px">अगर इस साइट पर आपकी कोई खबर, फ़ोटो या अन्य सामग्री आपकी अनुमति के बिना दिख रही है, या किसी जानकारी में त्रुटि है, तो कृपया हमें लिखें। हम जांचकर यथाशीघ्र उचित कार्रवाई करेंगे।</p>
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">अनुरोध में ये बताएँ:</div>
+    <ol style="font-size:13px;line-height:1.8;margin:0 0 14px 20px;padding:0">
+      <li>जिस खबर/फ़ोटो को हटाना है, उसका शीर्षक और पेज का लिंक</li>
+      <li>आपका नाम, संस्था/प्रकाशन का नाम और संपर्क</li>
+      <li>आप उस सामग्री के अधिकार-धारक/प्रतिनिधि कैसे हैं</li>
+      <li>क्या हटाना है और क्यों</li>
+    </ol>
+    <div style="font-size:13px;margin-bottom:4px">ईमेल: <strong id="td-email"></strong></div>
+    <div style="font-size:13px;margin-bottom:12px">मोबाइल: <a id="td-phone" href="#" style="color:var(--accent-blue);font-weight:700;text-decoration:none"></a></div>
+    <a id="td-mailto" href="#" style="display:inline-block;background:var(--red);color:#fff;padding:9px 20px;text-decoration:none;font-weight:700;font-size:14px;border-radius:2px">✉ ईमेल भेजें</a>
+  </div>
+</div>
+<script>
+/* 🆕 हटाने का अनुरोध — ईमेल/मोबाइल बदलना हो तो सिर्फ़ ये दो लाइनें बदलें */
+const TAKEDOWN_EMAIL = 'ananyagoswami07@gmail.com';
+const TAKEDOWN_PHONE = '9414519952';
+
+function openTakedown(){
+  const subj = 'हटाने का अनुरोध — सत्य प्रतिबिम्ब';
+  const body = 'नमस्कार,\n\nमैं निम्न सामग्री हटवाना चाहता/चाहती हूँ:\n\n1. खबर/फ़ोटो का शीर्षक और लिंक:\n2. मेरा नाम, संस्था और संपर्क:\n3. अधिकार-धारक होने का विवरण:\n4. हटाने का कारण:\n';
+  const em = document.getElementById('td-email');
+  const ml = document.getElementById('td-mailto');
+  if(em) em.textContent = TAKEDOWN_EMAIL;
+  const ph = document.getElementById('td-phone');
+  if(ph){ ph.textContent = '+91 ' + TAKEDOWN_PHONE; ph.href = 'tel:+91' + TAKEDOWN_PHONE; }
+  if(ml) ml.href = 'mailto:' + TAKEDOWN_EMAIL + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body);
+  const m = document.getElementById('takedown-modal');
+  if(m) m.style.display = 'flex';
+}
+function closeTakedown(){
+  const m = document.getElementById('takedown-modal');
+  if(m) m.style.display = 'none';
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTakedown(); });
+</script>
 
 <!-- ══════════════════════════════════════════════
      PIN / PASSWORD MODAL — संपादक सुरक्षा
@@ -7072,9 +7116,15 @@ document.getElementById('pin-modal-overlay').addEventListener('click', function(
   .more-news { margin: 26px 0 10px; padding-top: 14px; border-top: 3px double var(--red); }
   .more-news-head { font-family:'Noto Sans Devanagari',sans-serif; font-weight:800; font-size:18px; color:var(--ink); margin-bottom:12px; }
   .more-news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px 18px; }
-  .more-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--rule); text-decoration:none; color:inherit; }
+  .more-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--rule); color:inherit; cursor:pointer; }
   .more-item:hover .more-title { color:var(--red); }
-  .more-item img { width:92px; height:68px; object-fit:cover; flex-shrink:0; background:var(--paper-dark); }
+  .more-thumb { position:relative; width:92px; height:68px; flex-shrink:0; display:block; }
+  .more-item img { width:92px; height:68px; object-fit:cover; display:block; background:var(--paper-dark); }
+  .more-cap { position:absolute; left:0; right:0; bottom:0; background:rgba(0,0,0,.55); color:#fff; font-size:9px; text-align:center; padding:1px 0; font-family:'Noto Sans Devanagari',sans-serif; }
+  .img-cap { font-family:'Noto Sans Devanagari',sans-serif; font-size:10px; color:var(--ink-soft); text-align:right; margin:2px 0 6px; }
+  .modal-src { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--rule); font-family:'Noto Sans Devanagari',sans-serif; font-size:12px; color:var(--ink-soft); }
+  .modal-src a { background:var(--red); color:#fff; padding:6px 14px; text-decoration:none; font-weight:700; border-radius:2px; font-size:13px; }
+  .modal-src a:hover { background:var(--red-dark); }
   .more-title { font-family:'Noto Sans Devanagari',sans-serif; font-weight:700; font-size:14px; line-height:1.45; color:var(--ink); }
   .more-meta { font-family:'Noto Sans Devanagari',sans-serif; font-size:11px; color:var(--ink-soft); margin-top:3px; }
   .more-sum { font-family:'Noto Sans Devanagari',sans-serif; font-size:12px; color:var(--ink-soft); margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -7167,11 +7217,15 @@ function parseR2J(data, sourceName){
     /* Clean description: strip HTML */
     const tmp = document.createElement('div');
     tmp.innerHTML = item.description || item.summary || '';
-    const summary = (tmp.textContent || '').trim().slice(0, 130) || 'पूरी खबर पढ़ने के लिए शीर्षक पर क्लिक करें।';
+    const fullText = (tmp.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+    const summary = fullText ? (fullText.length > 130 ? fullText.slice(0, 130).trim() + '…' : fullText)
+                             : 'स्रोत: ' + sourceName + ' — ताज़ा समाचार';
     return {
       title,
       summary,
+      full: fullText,
       image: pickImage(title, item.thumbnail || item.enclosure?.link || ''),
+      stockImg: !(((item.thumbnail || item.enclosure?.link || '') + '').startsWith('http') && !((item.thumbnail || item.enclosure?.link || '') + '').includes('placeholder')),
       source: sourceName,
       time: now,
       link: item.link || '#',
@@ -7232,19 +7286,25 @@ function renderMoreNews(box, items, heading){
   box.appendChild(grid);
 
   items.forEach((n, i) => {
-    const a = document.createElement('a');
+    const a = document.createElement('div');
     a.className = 'more-item' + (i >= VISIBLE ? ' more-hidden' : '');
-    if(/^https?:\/\//i.test(n.link || '')){ a.href = n.link; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+    a.setAttribute('role', 'button'); a.tabIndex = 0;
+    a.onclick = () => openNewsItem(n);
+    a.onkeydown = ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openNewsItem(n); } };
 
+    const th = document.createElement('span');
+    th.className = 'more-thumb';
     const img = document.createElement('img');
     img.loading = 'lazy'; img.alt = ''; img.src = n.image;
     img.onerror = () => { img.style.display = 'none'; };
-    a.appendChild(img);
+    th.appendChild(img);
+    if(n.stockImg){ const c = document.createElement('span'); c.className = 'more-cap'; c.textContent = 'प्रतीकात्मक'; th.appendChild(c); }
+    a.appendChild(th);
 
     const body = document.createElement('div');
     const t = document.createElement('div'); t.className = 'more-title'; t.textContent = n.title; body.appendChild(t);
     const m = document.createElement('div'); m.className = 'more-meta'; m.textContent = n.source + ' · 🕐 ' + n.time; body.appendChild(m);
-    if(n.summary && !n.summary.startsWith('पूरी खबर पढ़ने')){
+    if(n.summary && !n.summary.startsWith('स्रोत:')){
       const sm = document.createElement('div'); sm.className = 'more-sum'; sm.textContent = n.summary; body.appendChild(sm);
     }
     a.appendChild(body);
@@ -7315,9 +7375,71 @@ async function fetchLiveNewsSafe(){
   if(status) status.textContent = '⚠️ कनेक्शन समस्या — पेज रिफ्रेश करें';
 }
 
+/* 🆕 stock/सामान्य फ़ोटो हो तो "प्रतीकात्मक चित्र" का लेबल लगाएँ (असली फ़ोटो होने पर हटा दें) */
+function setImgCaption(img, stock){
+  if(!img || !img.id) return;
+  let cap = document.getElementById('cap-' + img.id);
+  if(!stock){ if(cap) cap.remove(); return; }
+  if(!cap){
+    cap = document.createElement('div');
+    cap.id = 'cap-' + img.id; cap.className = 'img-cap';
+    img.insertAdjacentElement('afterend', cap);
+  }
+  cap.textContent = 'प्रतीकात्मक चित्र';
+}
+
+/* ---------- 🆕 खबर साइट के भीतर ही पॉप-अप में दिखाएँ (बाहरी साइट नहीं खुलेगी) ---------- */
+function openNewsItem(n){
+  if(!n) return;
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  set('modal-kicker', '📰 आज की प्रमुख खबर');
+  set('modal-title', n.title || '');
+  const img = document.getElementById('modal-img');
+  if(img){ img.onerror = () => { img.onerror = null; img.src = TOPIC_IMG['DEFAULT']; setImgCaption(img, true); }; img.src = n.image || TOPIC_IMG['DEFAULT']; setImgCaption(img, !!n.stockImg); }
+  set('modal-meta-tag', 'समाचार');
+  set('modal-meta-author', '✒ ' + (n.source || ''));
+  set('modal-meta-time', '🕐 ' + (n.time || ''));
+  const body = document.getElementById('modal-body');
+  if(body){
+    body.textContent = '';
+    const p = document.createElement('p');
+    p.style.marginBottom = '1rem';
+    p.textContent = n.full || n.summary || '';
+    body.appendChild(p);
+
+    /* 🆕 स्रोत का श्रेय + मूल खबर का लिंक */
+    const foot = document.createElement('div');
+    foot.className = 'modal-src';
+    const sp = document.createElement('span');
+    sp.textContent = 'स्रोत: ' + (n.source || '') + ' · सर्वाधिकार मूल प्रकाशक के';
+    foot.appendChild(sp);
+    if(/^https?:\/\//i.test(n.link || '')){
+      const a = document.createElement('a');
+      a.href = n.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = 'मूल खबर पढ़ें →';
+      foot.appendChild(a);
+    }
+    body.appendChild(foot);
+  }
+  const m = document.getElementById('article-modal');
+  if(m) m.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* होम के 5 कार्डों पर क्लिक (openArticle(0..4)) — लाइव खबर हो तो वही पॉप-अप में खुले */
+window.__liveNews = [];
+(function(){
+  const _orig = window.openArticle;
+  window.openArticle = function(idx){
+    if(window.__liveNews && window.__liveNews[idx]) return openNewsItem(window.__liveNews[idx]);
+    if(typeof _orig === 'function') return _orig(idx);
+  };
+})();
+
 /* ---------- APPLY TO DOM ---------- */
 function applyNews(newsList){
   renderMoreNews(document.getElementById('more-news-home'), newsList.slice(5), '📰 और ताज़ा खबरें');
+  window.__liveNews = newsList.slice(0, 5);
   newsList.slice(0, 5).forEach((news, index) => {
     const T = document.getElementById('news-title-'   + index);
     const S = document.getElementById('news-summary-' + index);
@@ -7326,17 +7448,12 @@ function applyNews(newsList){
     const A = document.getElementById('news-author-'  + index);
     const M = document.getElementById('news-time-'    + index);
 
-    if(T){ T.textContent = news.title;
-      if(news.link && news.link !== '#'){
-        T.style.cursor = 'pointer';
-        T.title = 'पूरी खबर पढ़ें';
-        T.onclick = () => window.open(news.link, '_blank');
-      }
-    }
+    if(T){ T.textContent = news.title; T.style.cursor = 'pointer'; }
     if(S) S.textContent = news.summary;
     if(I){ I.src = news.image; I.style.filter = 'none';
-           I.onerror = () => { I.src = TOPIC_IMG['DEFAULT']; }; }
-    if(K) K.textContent = '📰 आज की प्रमुख खबर';
+           I.onerror = () => { I.src = TOPIC_IMG['DEFAULT']; };
+           if(index > 0) setImgCaption(I, !!news.stockImg); }
+    if(K) K.textContent = '📰 आज की प्रमुख खबर' + ((index === 0 && news.stockImg) ? ' · प्रतीकात्मक चित्र' : '');
     if(A) A.textContent = '✒ ' + news.source;
     if(M) M.textContent = '🕐 ' + news.time;
   });
@@ -7349,7 +7466,7 @@ function applyNews(newsList){
     [..._tk, ..._tk].forEach(n => {
       const span = document.createElement('span');
       span.textContent = n.title;
-      if(n.link && n.link !== '#'){ span.style.cursor='pointer'; span.onclick=()=>window.open(n.link,'_blank'); }
+      span.style.cursor='pointer'; span.onclick=()=>openNewsItem(n);
       ticker.appendChild(span);
     });
   }
@@ -8888,17 +9005,19 @@ function _applyColumnNews(sectionId, newsList) {
 
     if (T) {
       T.textContent = news.title;
-      if (news.link && news.link !== '#') {
-        T.style.cursor = 'pointer';
-        T.onclick = () => window.open(news.link, '_blank');
-      }
+      T.style.cursor = 'pointer';
+      /* 🆕 पूरे कार्ड पर क्लिक → साइट के भीतर पॉप-अप (बाहरी साइट नहीं खुलेगी) */
+      const _card = T.closest('.sec-card, .sec-wide-card');
+      if (_card) { _card.style.cursor = 'pointer'; _card.onclick = () => openNewsItem(news); }
+      else T.onclick = () => openNewsItem(news);
     }
     if (S) S.textContent = news.summary;
     if (I) {
       I.src = news.image;
       I.onerror = () => { I.src = TOPIC_IMG['DEFAULT']; };
+      if (i > 0) setImgCaption(I, !!news.stockImg);
     }
-    if (K) K.textContent = kickerLabel + ' · ' + news.source;
+    if (K) K.textContent = kickerLabel + ' · ' + news.source + ((i === 0 && news.stockImg) ? ' · प्रतीकात्मक चित्र' : '');
     if (M) M.textContent = '🕐 ' + news.time;
   });
 

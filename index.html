@@ -3991,6 +3991,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTakedown
       <div id="mep-news-fields" style="display:flex;flex-direction:column;gap:18px"></div>
       <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--rule)">
         <button onclick="closeManualEditPanel()" style="padding:9px 20px;background:var(--paper-dark);border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;cursor:pointer;color:var(--ink)">रद्द करें</button>
+        <button onclick="mepResetShared('news')" style="margin-right:auto;padding:9px 16px;background:none;border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-soft)">↩ ऑटो पर लौटें</button>
         <button onclick="mepSaveNews()" style="padding:9px 26px;background:var(--accent-blue);border:none;font-family:'Noto Serif Devanagari',serif;font-size:14px;font-weight:700;color:white;cursor:pointer">✅ सहेजें</button>
       </div>
     </div>
@@ -4003,6 +4004,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTakedown
       <div id="mep-briefs-fields" style="display:flex;flex-direction:column;gap:12px"></div>
       <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--rule)">
         <button onclick="closeManualEditPanel()" style="padding:9px 20px;background:var(--paper-dark);border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;cursor:pointer;color:var(--ink)">रद्द करें</button>
+        <button onclick="mepResetShared('briefs')" style="margin-right:auto;padding:9px 16px;background:none;border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-soft)">↩ ऑटो पर लौटें</button>
         <button onclick="mepSaveBriefs()" style="padding:9px 26px;background:var(--accent-blue);border:none;font-family:'Noto Serif Devanagari',serif;font-size:14px;font-weight:700;color:white;cursor:pointer">✅ सहेजें</button>
       </div>
     </div>
@@ -4015,6 +4017,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTakedown
       <div id="mep-gallery-fields" style="display:flex;flex-direction:column;gap:18px"></div>
       <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--rule)">
         <button onclick="closeManualEditPanel()" style="padding:9px 20px;background:var(--paper-dark);border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;cursor:pointer;color:var(--ink)">रद्द करें</button>
+        <button onclick="mepResetGallery()" style="margin-right:auto;padding:9px 16px;background:none;border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-soft)">↩ ऑटो गैलरी पर लौटें</button>
         <button onclick="mepSaveGallery()" style="padding:9px 26px;background:var(--accent-blue);border:none;font-family:'Noto Serif Devanagari',serif;font-size:14px;font-weight:700;color:white;cursor:pointer">✅ गैलरी सहेजें</button>
       </div>
     </div>
@@ -4042,6 +4045,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTakedown
 
       <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--rule)">
         <button onclick="closeManualEditPanel()" style="padding:9px 20px;background:var(--paper-dark);border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:13px;cursor:pointer;color:var(--ink)">रद्द करें</button>
+        <button onclick="mepResetShared('editorial')" style="margin-right:auto;padding:9px 16px;background:none;border:1.5px solid var(--rule-dark);font-family:'Noto Sans Devanagari',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-soft)">↩ ऑटो पर लौटें</button>
         <button onclick="mepSaveEditorial()" style="padding:9px 26px;background:var(--accent-blue);border:none;font-family:'Noto Serif Devanagari',serif;font-size:14px;font-weight:700;color:white;cursor:pointer">✅ सहेजें</button>
       </div>
 
@@ -4135,6 +4139,8 @@ function mepSwitchTab(tab) {
 
 // ── फ़ोटो data store (base64 या URL) प्रत्येक news card के लिए ──
 var _mepPhotoData = {};   // key: index → data-URL या सामान्य URL
+var _mepNewsOrig = {};    // खोलते समय के मान (बदलाव पहचानने के लिए)
+var _mepBriefOrig = {};
 
 // ── फ़ोटो चुनने पर preview + store ──
 function _mepHandlePhoto(idx, input) {
@@ -4172,13 +4178,15 @@ function _mepBuildNewsFields() {
   var container = document.getElementById('mep-news-fields');
   container.innerHTML = '';
   _mepPhotoData = {};  // reset
+  _mepNewsOrig = {};
   for (var i = 0; i < 5; i++) {
     var label = _mepNewsLabels[i] || ('खबर ' + (i+1));
     var title   = (document.getElementById('news-title-'+i)   || {}).textContent || '';
-    var kicker  = (document.getElementById('news-kicker-'+i)  || {}).textContent || '';
+    var kicker  = ((document.getElementById('news-kicker-'+i)  || {}).textContent || '').replace(/ · प्रतीकात्मक चित्र$/, '');
     var summary = (document.getElementById('news-summary-'+i) || {}).textContent || '';
     var curImg  = (document.getElementById('news-img-'+i)     || {}).src || '';
     var idx = i;  // closure fix
+    _mepNewsOrig[i] = { title: title.trim(), kicker: kicker.trim(), summary: summary.trim() };
 
     var block = document.createElement('div');
     block.style.cssText = 'background:var(--paper-warm);border:1px solid var(--rule);padding:14px;border-left:4px solid var(--accent-blue)';
@@ -4234,8 +4242,9 @@ function _mepBuildNewsFields() {
   }
 }
 
-function mepSaveNews() {
+async function mepSaveNews() {
   var newTitles = [];
+  var _changes = [];
   for (var i = 0; i < 5; i++) {
     var titleEl   = document.getElementById('mep-news-title-'+i);
     var kickerEl  = document.getElementById('mep-news-kicker-'+i);
@@ -4250,6 +4259,16 @@ function mepSaveNews() {
     if (newKicker  && document.getElementById('news-kicker-'+i))  document.getElementById('news-kicker-'+i).textContent  = newKicker;
     if (newSummary && document.getElementById('news-summary-'+i)) document.getElementById('news-summary-'+i).textContent = newSummary;
     if (newTitle) newTitles.push(newTitle);
+
+    /* 🆕 सर्वर पर भेजने के लिए बदले हुए खाने पहचानें */
+    var _o = _mepNewsOrig[i] || {};
+    var _textChanged = (newTitle && newTitle !== _o.title) || (newKicker && newKicker !== _o.kicker) || (newSummary && newSummary !== _o.summary);
+    if (_textChanged || _mepPhotoData[i]) {
+      var _src = _mepPhotoData[i] || ((document.getElementById('news-img-'+i) || {}).src || '');
+      var _ch = { index: i, title: newTitle || _o.title || '', kicker: newKicker || _o.kicker || '', summary: newSummary || _o.summary || '' };
+      if (_src) { if (_src.indexOf('data:') === 0) _ch.imageData = _src; else _ch.image = _src.replace(location.origin, ''); }
+      _changes.push(_ch);
+    }
 
     // ── articles[] array अपडेट — modal "पूरा पढ़ें" के लिए ──
     if (typeof articles !== 'undefined' && articles[i]) {
@@ -4283,7 +4302,14 @@ function mepSaveNews() {
     tickerEl.style.animation = 'ticker 45s linear infinite';
   }
   closeManualEditPanel();
-  _mepToast('✅ खबरें, फ़ोटो और टिकर सफलतापूर्वक अपडेट हो गए!');
+  if (!_changes.length) { _mepToast('📰 कोई बदलाव नहीं किया गया।'); return; }
+  _mepToast('⏳ खबरें सर्वर पर सेव हो रही हैं…');
+  try {
+    for (var k = 0; k < _changes.length; k++) {
+      if (_changes[k].imageData) _changes[k].imageData = await _mepShrinkToLimit(_changes[k].imageData);
+    }
+  } catch (e) { _mepToast('⚠ फ़ोटो भेजी नहीं जा सकी (' + e.message + ')'); return; }
+  await _mepPushShared('news', { items: _changes }, '✅ खबरें सेव हो गईं — अब सभी डिवाइस पर दिखेंगी!');
 }
 
 // ── संक्षिप्त समाचार ──
@@ -4292,6 +4318,7 @@ function _mepBuildBriefFields() {
   container.innerHTML = '';
   for (var i = 0; i < 6; i++) {
     var txt = (document.getElementById('brief-'+i) || {}).textContent || '';
+    _mepBriefOrig[i] = txt.trim();
     var row = document.createElement('div');
     row.innerHTML =
       '<label style="display:block;font-family:\'Noto Sans Devanagari\',sans-serif;font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:5px">संक्षिप्त समाचार ' + (i+1) + '</label>' +
@@ -4300,18 +4327,26 @@ function _mepBuildBriefFields() {
   }
 }
 
-function mepSaveBriefs() {
+async function mepSaveBriefs() {
+  var pinned = (window.__sharedState && window.__sharedState.briefs && window.__sharedState.briefs.items) || [];
+  var items = [], anyNew = false;
   for (var i = 0; i < 6; i++) {
     var inp = document.getElementById('mep-brief-'+i);
     var el  = document.getElementById('brief-'+i);
+    var v = inp ? inp.value.trim() : '';
     if (inp && el) el.textContent = inp.value;
+    if (v && v !== (_mepBriefOrig[i] || '')) { items.push(v); anyNew = true; }
+    else items.push(pinned[i] || null);        /* पहले से साझा किए गए बदलाव बने रहें */
   }
   closeManualEditPanel();
-  _mepToast('✅ संक्षिप्त समाचार सफलतापूर्वक अपडेट हो गए!');
+  if (!anyNew) { _mepToast('📋 कोई बदलाव नहीं किया गया।'); return; }
+  _mepToast('⏳ संक्षिप्त समाचार सर्वर पर सेव हो रहे हैं…');
+  await _mepPushShared('briefs', { items: items }, '✅ संक्षिप्त समाचार सेव हो गए — अब सभी डिवाइस पर दिखेंगे!');
 }
 
 // ── फोटो गैलरी ──
 var _mepGalleryData = {};  // index → data-URL या URL
+var _mepGalleryOrigCap = {};  // खोलते समय के कैप्शन (बदलाव पहचानने के लिए)
 
 var _mepGalleryLabels = ['मुख्य फोटो (बड़ा)', 'फोटो 2', 'फोटो 3', 'फोटो 4', 'फोटो 5'];
 
@@ -4325,6 +4360,7 @@ function _mepBuildGalleryFields() {
     var label = _mepGalleryLabels[i] || ('फोटो ' + (i+1));
     var curImg = (document.getElementById('gallery-img-'+i) || {}).src || '';
     var curCap = (document.getElementById('gallery-cap-'+i) || {}).textContent || '';
+    _mepGalleryOrigCap[i] = curCap.trim();
     var idx = i;
 
     var block = document.createElement('div');
@@ -4397,24 +4433,134 @@ function _mepApplyGalleryUrl(idx) {
   _mepToast('✅ फोटो ' + (idx+1) + ' का URL सेट हो गया!');
 }
 
-function mepSaveGallery() {
-  var anyChange = false;
+/* ── 🆕 साझा गैलरी: फ़ोटो छोटी करके (compress) सर्वर पर भेजें ── */
+var SHARED_GALLERY_API = '/.netlify/functions/sharedgallery';
+var SHARED_STATE_API   = '/.netlify/functions/sharedstate';
+
+/* 🆕 संपादक पैनल के बदलाव सर्वर पर भेजें (प्रमुख खबरें / संक्षिप्त / संपादकीय / जोड़े गए लेख) */
+async function _mepPushShared(key, value, okMsg) {
+  try {
+    var res = await fetch(SHARED_STATE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-editor-pin': EDITOR_PIN },
+      body: JSON.stringify({ key: key, value: value })
+    });
+    var out = await res.json().catch(function() { return {}; });
+    if (!res.ok || !out.ok) throw new Error(out.error || ('HTTP ' + res.status));
+    window.__sharedState = out.state || {};
+    window.__sharedStateUpdated = out.updated;
+    if (key === 'news' && window.__rawNews && typeof applyNews === 'function') applyNews(window.__rawNews);
+    if (okMsg) _mepToast(okMsg);
+    return true;
+  } catch (e) {
+    console.error('Shared save failed:', e);
+    _mepToast('⚠ सर्वर पर सेव नहीं हुआ (' + e.message + ') — बदलाव सिर्फ़ इसी डिवाइस पर है।');
+    return false;
+  }
+}
+
+async function mepResetShared(key) {
+  if (!confirm('इस टैब के साझा बदलाव हटाकर ऑटो (रोज़ बदलने वाली) सामग्री पर लौटें? यह सभी डिवाइस पर लागू होगा।')) return;
+  try {
+    var res = await fetch(SHARED_STATE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-editor-pin': EDITOR_PIN },
+      body: JSON.stringify({ key: key, reset: true })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mepToast('✅ रीसेट हो गया — पेज रीलोड हो रहा है…');
+    setTimeout(function() { location.reload(); }, 900);
+  } catch (e) { _mepToast('⚠ रीसेट नहीं हुआ (' + e.message + ')'); }
+}
+
+function _mepCompressImage(dataUrl, maxW, quality) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var scale = Math.min(1, maxW / Math.max(w, 1));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = function() { reject(new Error('फ़ोटो पढ़ी नहीं जा सकी')); };
+    img.src = dataUrl;
+  });
+}
+
+async function _mepShrinkToLimit(dataUrl) {
+  var tries = [[1200, 0.82], [1000, 0.75], [800, 0.7], [640, 0.65]];
+  for (var t = 0; t < tries.length; t++) {
+    var out = await _mepCompressImage(dataUrl, tries[t][0], tries[t][1]);
+    if (out.length < 1900000) return out;   /* ≈1.4MB फ़ाइल */
+  }
+  throw new Error('फ़ोटो बहुत बड़ी है');
+}
+
+async function mepSaveGallery() {
+  var changes = [];
   for (var i = 0; i < 5; i++) {
-    // फोटो अपडेट
-    if (_mepGalleryData[i]) {
-      var imgEl = document.getElementById('gallery-img-'+i);
-      if (imgEl) { imgEl.src = _mepGalleryData[i]; anyChange = true; }
-    }
-    // कैप्शन अपडेट
-    var capInp = document.getElementById('mep-gal-cap-'+i);
+    var imgEl  = document.getElementById('gallery-img-'+i);
     var capEl  = document.getElementById('gallery-cap-'+i);
-    if (capInp && capEl && capInp.value.trim()) {
-      capEl.textContent = capInp.value.trim();
-      anyChange = true;
+    var capInp = document.getElementById('mep-gal-cap-'+i);
+    var newCap = capInp ? capInp.value.trim() : '';
+    var photoChanged = !!_mepGalleryData[i];
+    var capChanged = newCap !== '' && newCap !== (_mepGalleryOrigCap[i] || '');
+    if (!photoChanged && !capChanged) continue;
+
+    /* इसी डिवाइस पर तुरंत दिखाएँ */
+    if (photoChanged && imgEl) imgEl.src = _mepGalleryData[i];
+    if (capChanged && capEl) capEl.textContent = newCap;
+
+    /* फ़ोटो और कैप्शन दोनों साथ पिन करें, ताकि रोज़ की ऑटो-बदलाव से जोड़ी न बिगड़े */
+    var entry = { index: i, caption: (capEl ? capEl.textContent : newCap).trim() };
+    var src = _mepGalleryData[i] || (imgEl ? imgEl.src : '');
+    if (src) {
+      if (src.indexOf('data:') === 0) entry.imageData = src;
+      else entry.imageUrl = src.replace(location.origin, '');
     }
+    changes.push(entry);
   }
   closeManualEditPanel();
-  _mepToast(anyChange ? '✅ फोटो गैलरी सफलतापूर्वक अपडेट हो गई!' : '📷 कोई बदलाव नहीं किया गया।');
+  if (!changes.length) { _mepToast('📷 कोई बदलाव नहीं किया गया।'); return; }
+
+  _mepToast('⏳ गैलरी सर्वर पर सेव हो रही है…');
+  try {
+    for (var k = 0; k < changes.length; k++) {
+      if (changes[k].imageData) changes[k].imageData = await _mepShrinkToLimit(changes[k].imageData);
+    }
+    var res = await fetch(SHARED_GALLERY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-editor-pin': EDITOR_PIN },
+      body: JSON.stringify({ items: changes })
+    });
+    var out = await res.json().catch(function() { return {}; });
+    if (!res.ok || !out.ok) throw new Error(out.error || ('HTTP ' + res.status));
+    applySharedGallery(out.meta);
+    _mepToast('✅ गैलरी सेव हो गई — अब सभी डिवाइस पर दिखेगी!');
+  } catch (e) {
+    console.error('Gallery save failed:', e);
+    _mepToast('⚠ सर्वर पर सेव नहीं हुआ (' + e.message + ') — बदलाव सिर्फ़ इसी डिवाइस पर है।');
+  }
+}
+
+async function mepResetGallery() {
+  if (!confirm('गैलरी को रोज़ बदलने वाली (ऑटो) फ़ोटो पर वापस लाएँ? आपकी चुनी हुई फ़ोटो सभी डिवाइस से हट जाएँगी।')) return;
+  try {
+    var res = await fetch(SHARED_GALLERY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-editor-pin': EDITOR_PIN },
+      body: JSON.stringify({ reset: true })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mepToast('✅ गैलरी रीसेट हो गई — पेज रीलोड हो रहा है…');
+    setTimeout(function() { location.reload(); }, 900);
+  } catch (e) {
+    _mepToast('⚠ रीसेट नहीं हुआ (' + e.message + ')');
+  }
 }
 function _mepLoadEditorialFields() {
   var titleEl = document.getElementById('ec-title');
@@ -4431,45 +4577,36 @@ function _mepLoadEditorialFields() {
   if (binp && bodyEl) binp.value = bodyEl.innerText || bodyEl.textContent || '';
 }
 
-function mepSaveEditorial() {
-  var titleVal = (document.getElementById('mep-ed-title') || {}).value || '';
-  var quoteVal = (document.getElementById('mep-ed-quote') || {}).value || '';
-  var bodyVal  = (document.getElementById('mep-ed-body')  || {}).value || '';
+async function mepSaveEditorial() {
+  var titleVal = ((document.getElementById('mep-ed-title') || {}).value || '').trim();
+  var quoteVal = ((document.getElementById('mep-ed-quote') || {}).value || '').trim();
+  var bodyVal  = ((document.getElementById('mep-ed-body')  || {}).value || '').trim();
 
   if (titleVal && document.getElementById('ec-title'))   document.getElementById('ec-title').textContent = titleVal;
   if (quoteVal && document.getElementById('ec-quote'))   document.getElementById('ec-quote').textContent = quoteVal;
-  if (bodyVal  && document.getElementById('ec-body')) {
-    // Convert plain text paragraphs to styled HTML
-    var paras = bodyVal.split(/\n+/).filter(function(p){ return p.trim(); });
-    var html = paras.map(function(p, idx) {
-      if (idx === 0) {
-        var first = p.trim();
-        var fc = first.charAt(0);
-        var rest = first.slice(1);
-        return "<p style='margin-bottom:14px'><span style='float:left;font-family:\"Playfair Display\",serif;font-size:52px;font-weight:900;color:var(--red);line-height:0.8;margin:6px 8px 0 0'>"+fc+"</span>"+rest+"</p>";
-      }
-      return "<p style='margin-bottom:" + (idx === paras.length-1 ? '0' : '14px') + "'>" + p + "</p>";
-    }).join('');
-    document.getElementById('ec-body').innerHTML = html;
-  }
+  if (bodyVal  && document.getElementById('ec-body'))    document.getElementById('ec-body').innerHTML = _mepBuildEditorialBodyHtml(bodyVal);
   closeManualEditPanel();
-  _mepToast('✅ संपादकीय सफलतापूर्वक अपडेट हो गया!');
+  if (!titleVal && !quoteVal && !bodyVal) { _mepToast('✅ संपादकीय अपडेट हो गया!'); return; }
+  _mepToast('⏳ संपादकीय सर्वर पर सेव हो रहा है…');
+  await _mepPushShared('editorial', { title: titleVal, quote: quoteVal, body: bodyVal }, '✅ संपादकीय सेव हो गया — अब सभी डिवाइस पर दिखेगा!');
 }
 
 /* ══════════════════════════════════════════════════════
    "आज का संपादकीय" POOL में नया लेख जोड़ना — ChatGPT/अन्य
    स्रोत से प्राप्त लेख यहाँ persist होते हैं (localStorage)
    ══════════════════════════════════════════════════════ */
+function _mepEscText(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _mepBuildEditorialBodyHtml(bodyText) {
   var paras = (bodyText || '').split(/\n+/).map(function(p){ return p.trim(); }).filter(Boolean);
   if (paras.length === 0) return '';
   return paras.map(function(p, idx) {
     if (idx === 0) {
-      var fc = p.charAt(0);
-      var rest = p.slice(1);
+      var chars = Array.from(p);
+      var fc = _mepEscText(chars[0] || '');
+      var rest = _mepEscText(chars.slice(1).join(''));
       return "<p style='margin-bottom:14px'><span style='float:left;font-family:\"Playfair Display\",serif;font-size:52px;font-weight:900;color:var(--red);line-height:0.8;margin:6px 8px 0 0'>" + fc + "</span>" + rest + "</p>";
     }
-    return "<p style='margin-bottom:" + (idx === paras.length - 1 ? '0' : '14px') + "'>" + p + "</p>";
+    return "<p style='margin-bottom:" + (idx === paras.length - 1 ? '0' : '14px') + "'>" + _mepEscText(p) + "</p>";
   }).join('');
 }
 
@@ -4516,6 +4653,7 @@ function mepAddNewEditorial() {
 
   _mepRenderCustomEditorials();
   _mepToast('✅ नया लेख "आज का संपादकीय" pool में जुड़ गया!');
+  _mepPushShared('customEditorials', existing, '✅ लेख सर्वर पर भी सेव हो गया — सभी डिवाइस पर दिखेगा!');
 }
 
 function _mepRenderCustomEditorials() {
@@ -4554,6 +4692,7 @@ function mepDeleteCustomEditorial(idx) {
   try { localStorage.setItem('satya_customEditorials', JSON.stringify(existing)); } catch(e) {}
   _mepRenderCustomEditorials();
   _mepToast('🗑 लेख हटा दिया गया।');
+  _mepPushShared('customEditorials', existing, '🗑 लेख सभी डिवाइस से हट गया।');
 }
 
 // Helper: escape HTML for attribute values
@@ -6077,6 +6216,99 @@ function updateDailyGallery(newsItems, dateStr) {
 }
 
 
+/* ── 🆕 साझा गैलरी (संपादक द्वारा चुनी फ़ोटो) — हर डिवाइस पर लागू ── */
+window.__sharedGallery = null;
+function applySharedGallery(meta) {
+  if (!meta || !Array.isArray(meta.items)) return;
+  window.__sharedGallery = meta;
+  meta.items.forEach(function(it, i) {
+    if (!it) return;
+    var imgEl = document.getElementById('gallery-img-' + i);
+    var capEl = document.getElementById('gallery-cap-' + i);
+    if (it.img && imgEl && imgEl.getAttribute('src') !== it.img) imgEl.src = it.img;
+    if (it.cap && capEl) capEl.textContent = it.cap;
+  });
+}
+async function loadSharedGallery() {
+  try {
+    var res = await fetch(SHARED_GALLERY_API, { cache: 'no-store' });
+    if (!res.ok) return;
+    applySharedGallery(await res.json());
+  } catch (e) { /* सर्वर उपलब्ध नहीं — ऑटो गैलरी चलती रहे */ }
+}
+(function() {
+  var _orig = updateDailyGallery;
+  updateDailyGallery = function() {          /* रोज़ की ऑटो-गैलरी के बाद संपादक की चुनी फ़ोटो दोबारा लगाएँ */
+    _orig.apply(this, arguments);
+    if (window.__sharedGallery) applySharedGallery(window.__sharedGallery);
+  };
+})();
+loadSharedGallery();
+setInterval(loadSharedGallery, 5 * 60 * 1000);
+
+/* ── 🆕 साझा संपादक-बदलाव (प्रमुख खबरें / संक्षिप्त / संपादकीय / जोड़े गए लेख) ── */
+window.__sharedState = {};
+window.__sharedStateUpdated = undefined;
+var __pageT0 = Date.now();
+
+function _applySharedBriefs(){
+  var b = window.__sharedState && window.__sharedState.briefs;
+  if(!b || !Array.isArray(b.items)) return;
+  b.items.forEach(function(v, i){
+    var el = document.getElementById('brief-' + i);
+    if(v && el && el.textContent !== v) el.textContent = v;
+  });
+}
+function _applySharedEditorial(){
+  var ed = window.__sharedState && window.__sharedState.editorial;
+  if(!ed) return;
+  var t = document.getElementById('ec-title'), q = document.getElementById('ec-quote'), bd = document.getElementById('ec-body');
+  if(ed.title && t && t.textContent !== ed.title) t.textContent = ed.title;
+  if(ed.quote && q && q.textContent !== ed.quote) q.textContent = ed.quote;
+  if(ed.body && bd){
+    var tmp = document.createElement('div');
+    tmp.innerHTML = _mepBuildEditorialBodyHtml(ed.body);
+    if(bd.innerHTML !== tmp.innerHTML) bd.innerHTML = tmp.innerHTML;
+  }
+}
+/* पेज खुलने के पहले 20 सेकंड में ऑटो-कोड (BBC संक्षिप्त समाचार आदि) संपादक की चुनी चीज़ें न मिटा दे */
+var __pinGuard = null;
+function _guardPinned(){
+  if(__pinGuard || typeof MutationObserver === 'undefined') return;
+  __pinGuard = new MutationObserver(function(){
+    if(Date.now() - __pageT0 > 20000){ __pinGuard.disconnect(); return; }
+    _applySharedBriefs(); _applySharedEditorial();
+  });
+  ['brief-0','brief-1','brief-2','brief-3','brief-4','brief-5','ec-title','ec-quote','ec-body'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) __pinGuard.observe(el, { childList: true, characterData: true, subtree: true });
+  });
+}
+function applySharedState(data){
+  if(!data || !data.state) return;
+  var changed = data.updated !== window.__sharedStateUpdated;
+  window.__sharedState = data.state;
+  window.__sharedStateUpdated = data.updated;
+  if(Array.isArray(data.state.customEditorials)){
+    try { localStorage.setItem('satya_customEditorials', JSON.stringify(data.state.customEditorials)); } catch(e) {}
+    if(typeof _mepRenderCustomEditorials === 'function') _mepRenderCustomEditorials();
+  }
+  if(!changed) return;
+  if(window.__rawNews) applyNews(window.__rawNews);
+  _applySharedBriefs();
+  _applySharedEditorial();
+  _guardPinned();
+}
+async function loadSharedState(){
+  try {
+    var res = await fetch(SHARED_STATE_API, { cache: 'no-store' });
+    if(!res.ok) return;
+    applySharedState(await res.json());
+  } catch(e) { /* सर्वर उपलब्ध नहीं — ऑटो सामग्री चलती रहे */ }
+}
+loadSharedState();
+setInterval(loadSharedState, 5 * 60 * 1000);
+
 /* ============================
    EDITOR PANEL TABS + POST MANAGEMENT
    ============================ */
@@ -7392,11 +7624,11 @@ function setImgCaption(img, stock){
 function openNewsItem(n){
   if(!n) return;
   const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
-  set('modal-kicker', '📰 आज की प्रमुख खबर');
+  set('modal-kicker', n.kicker || '📰 आज की प्रमुख खबर');
   set('modal-title', n.title || '');
   const img = document.getElementById('modal-img');
   if(img){ img.onerror = () => { img.onerror = null; img.src = TOPIC_IMG['DEFAULT']; setImgCaption(img, true); }; img.src = n.image || TOPIC_IMG['DEFAULT']; setImgCaption(img, !!n.stockImg); }
-  set('modal-meta-tag', 'समाचार');
+  set('modal-meta-tag', n.kicker || 'समाचार');
   set('modal-meta-author', '✒ ' + (n.source || ''));
   set('modal-meta-time', '🕐 ' + (n.time || ''));
   const body = document.getElementById('modal-body');
@@ -7437,7 +7669,33 @@ window.__liveNews = [];
 })();
 
 /* ---------- APPLY TO DOM ---------- */
+/* 🆕 संपादक की चुनी (साझा) मुख्य खबरें लाइव खबरों पर लागू करें */
+function mergeNewsOverrides(list){
+  var ov = window.__sharedState && window.__sharedState.news && window.__sharedState.news.items;
+  if(!Array.isArray(ov)) return list;
+  var out = list.slice();
+  for(var i = 0; i < 5; i++){
+    var o = ov[i];
+    if(!o || !o.title) continue;
+    var base = out[i] || {};
+    out[i] = Object.assign({}, base, {
+      title: o.title,
+      kicker: o.kicker || base.kicker,
+      summary: o.summary || base.summary || '',
+      full: o.summary || base.full || '',
+      image: o.image || base.image,
+      stockImg: o.image ? false : base.stockImg,
+      source: 'सत्य प्रतिबिम्ब',
+      link: '#',
+      time: base.time || ''
+    });
+  }
+  return out;
+}
+
 function applyNews(newsList){
+  window.__rawNews = newsList;
+  newsList = mergeNewsOverrides(newsList);
   renderMoreNews(document.getElementById('more-news-home'), newsList.slice(5), '📰 और ताज़ा खबरें');
   window.__liveNews = newsList.slice(0, 5);
   newsList.slice(0, 5).forEach((news, index) => {
@@ -7453,7 +7711,7 @@ function applyNews(newsList){
     if(I){ I.src = news.image; I.style.filter = 'none';
            I.onerror = () => { I.src = TOPIC_IMG['DEFAULT']; };
            if(index > 0) setImgCaption(I, !!news.stockImg); }
-    if(K) K.textContent = '📰 आज की प्रमुख खबर' + ((index === 0 && news.stockImg) ? ' · प्रतीकात्मक चित्र' : '');
+    if(K) K.textContent = (news.kicker || '📰 आज की प्रमुख खबर') + ((index === 0 && news.stockImg) ? ' · प्रतीकात्मक चित्र' : '');
     if(A) A.textContent = '✒ ' + news.source;
     if(M) M.textContent = '🕐 ' + news.time;
   });

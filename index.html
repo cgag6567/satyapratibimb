@@ -4450,6 +4450,8 @@ async function _mepPushShared(key, value, okMsg) {
     window.__sharedState = out.state || {};
     window.__sharedStateUpdated = out.updated;
     if (key === 'news' && window.__rawNews && typeof applyNews === 'function') applyNews(window.__rawNews);
+    if (key === 'promoted' && typeof renderPromotedFromState === 'function') renderPromotedFromState();
+    if (key === 'postEdits' && typeof _applyPostEdits === 'function') _applyPostEdits();
     if (okMsg) _mepToast(okMsg);
     return true;
   } catch (e) {
@@ -5251,6 +5253,8 @@ async function loadSharedPosts() {
   const cnt = list.querySelectorAll('.reader-post').length;
   const el = document.getElementById('post-count');
   if (el) el.textContent = cnt + ' पोस्ट';
+
+  if (typeof renderPromotedFromState === 'function') renderPromotedFromState();   /* 🆕 फ़ोटो अब उपलब्ध */
 }
 
 /* साझा पोस्ट पर लाइक — किसी भी विज़िटर के लिए खुला, सर्वर पर सहेजा जाता है */
@@ -5340,6 +5344,7 @@ function _renderReaderPosts(page) {
     const div = document.createElement('div');
     div.className = 'reader-post';
     div.setAttribute('data-pool', '1');
+    div.setAttribute('data-pool-key', p.title);
     div.innerHTML = `
       <div class="post-header">
         <div>
@@ -5356,6 +5361,8 @@ function _renderReaderPosts(page) {
       </div>`;
     list.appendChild(div);
   });
+
+  if (typeof _applyPostEdits === 'function') _applyPostEdits();   /* 🆕 संपादक के साझा बदलाव */
 
   const cnt = list.querySelectorAll('.reader-post').length;
   const el = document.getElementById('post-count');
@@ -6298,6 +6305,8 @@ function applySharedState(data){
   _applySharedBriefs();
   _applySharedEditorial();
   _guardPinned();
+  if(typeof _applyPostEdits === 'function') _applyPostEdits();
+  if(typeof renderPromotedFromState === 'function') renderPromotedFromState();
 }
 async function loadSharedState(){
   try {
@@ -6378,12 +6387,16 @@ function loadPostsIntoPanel() {
     editBtn.style.cssText = 'flex-shrink:0;padding:6px 14px;background:var(--ink);color:var(--gold);border:none;font-family:\'Noto Sans Devanagari\',sans-serif;font-size:12px;font-weight:700;cursor:pointer';
     editBtn.addEventListener('click', function() { editorEditPost(idx); });
 
-    const isPromoted = post.dataset.promoted === '1';
+    const isPromoted = _isPostPromoted(post);
     const promoteBtn = document.createElement('button');
     promoteBtn.textContent = isPromoted ? '✅ प्रकाशित' : '📰 समाचार में जोड़ें';
     promoteBtn.style.cssText = 'flex-shrink:0;padding:6px 12px;background:' + (isPromoted ? '#1a7a1a' : 'var(--accent-blue)') + ';color:white;border:none;font-family:\'Noto Sans Devanagari\',sans-serif;font-size:11px;font-weight:700;cursor:' + (isPromoted ? 'default' : 'pointer');
     if (!isPromoted) {
       promoteBtn.addEventListener('click', function() { openPromoteModal(idx); });
+    } else {
+      promoteBtn.title = 'समाचार सेक्शन से हटाने के लिए दबाएँ';
+      promoteBtn.style.cursor = 'pointer';
+      promoteBtn.addEventListener('click', function() { unpromotePost(idx); });
     }
 
     const btnGroup = document.createElement('div');
@@ -6395,6 +6408,77 @@ function loadPostsIntoPanel() {
     row.appendChild(btnGroup);
     list.appendChild(row);
   });
+}
+
+/* ── 🆕 साझा पोस्ट-संपादन / समाचार में प्रकाशित कार्ड ── */
+function _postKey(post) {
+  if (!post) return '';
+  if (post.hasAttribute('data-shared') && post.getAttribute('data-id')) return 'id:' + post.getAttribute('data-id');
+  if (post.getAttribute('data-pool-key')) return 'pool:' + post.getAttribute('data-pool-key');
+  return '';
+}
+function _sharedPromotedList() {
+  var st = window.__sharedState || {};
+  return Array.isArray(st.promoted) ? st.promoted : [];
+}
+function _isPostPromoted(post) {
+  var k = _postKey(post);
+  return !!k && _sharedPromotedList().some(function(e) { return e.key === k; });
+}
+/* डेमो/पूल पोस्ट के संपादन सभी डिवाइस पर लागू करें */
+function _applyPostEdits() {
+  var edits = (window.__sharedState && window.__sharedState.postEdits) || {};
+  document.querySelectorAll('#posts-list .reader-post[data-pool-key]').forEach(function(el) {
+    var e = edits['pool:' + el.getAttribute('data-pool-key')];
+    if (!e) return;
+    var t = el.querySelector('.post-title'), c = el.querySelector('.post-content'), m = el.querySelector('.post-meta');
+    if (t && t.textContent !== e.title) t.textContent = e.title;
+    if (c && c.textContent !== e.content) c.textContent = e.content;
+    if (m && m.textContent.indexOf('(संपादित)') === -1) m.textContent += ' · (संपादित)';
+  });
+}
+function _promotedPhotoFor(e) {
+  if (e.photoSrc) return e.photoSrc;
+  if (e.postId && typeof _sharedPostsCache !== 'undefined') {
+    var sp = _sharedPostsCache.find(function(x) { return x.id === e.postId; });
+    if (sp && sp.photo) return sp.photo;
+  }
+  return '';
+}
+/* सर्वर की सूची से "समाचार में प्रकाशित" कार्ड सभी विज़िटर्स के लिए बनाएँ */
+function renderPromotedFromState() {
+  var st = window.__sharedState || {};
+  if (!Array.isArray(st.promoted)) return;        /* कभी सेव नहीं हुआ — जैसा है वैसा रहने दें */
+  var section = document.getElementById('promoted-news-section');
+  var grid = document.getElementById('promoted-news-grid');
+  var inlineSection = document.getElementById('promoted-news-inline');
+  var inlineGrid = document.getElementById('promoted-news-grid-inline');
+  if (!section || !grid) return;
+  grid.innerHTML = '';
+  if (inlineGrid) inlineGrid.innerHTML = '';
+  if (!st.promoted.length) {
+    section.classList.remove('has-news');
+    if (inlineSection) inlineSection.style.display = 'none';
+    return;
+  }
+  st.promoted.slice().sort(function(a, b) { return (b.ts || 0) - (a.ts || 0); }).forEach(function(e) {
+    publishToNewsSection({ title: e.title, summary: e.summary, category: e.category, author: e.author, city: e.city, photoSrc: _promotedPhotoFor(e), ts: e.ts });
+  });
+}
+async function unpromotePost(idx) {
+  var post = document.querySelectorAll('#posts-list .reader-post')[idx];
+  if (!post || !confirm('इस पोस्ट को "समाचार" सेक्शन से हटाएँ? (सभी डिवाइस से हटेगी)')) return;
+  var k = _postKey(post);
+  var list = _sharedPromotedList().filter(function(e) { return e.key !== k; });
+  var badge = post.querySelector('.promoted-label-badge'); if (badge) badge.remove();
+  delete post.dataset.promoted;
+  if (post.hasAttribute('data-shared') && post.getAttribute('data-id')) {
+    fetch(SHARED_POSTS_API, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-editor-pin': EDITOR_PIN },
+      body: JSON.stringify({ id: post.getAttribute('data-id'), promoted: false }) }).catch(function() {});
+  }
+  loadPostsIntoPanel();
+  showToast('⏳ समाचार सेक्शन से हटाया जा रहा है…');
+  await _mepPushShared('promoted', list, '✅ समाचार सेक्शन से हट गई — सभी डिवाइस पर।');
 }
 
 /* ── Open inline edit for a post by index ── */
@@ -6464,8 +6548,17 @@ async function savePostEdit() {
     metaEl.textContent += ' · (संपादित)';
   }
 
+  var poolKey = currentEditPost.getAttribute('data-pool-key');
   closeInlineEdit();
   loadPostsIntoPanel(); // refresh the list
+  if (!isShared && poolKey) {
+    /* 🆕 डेमो/पूल पोस्ट का संपादन भी सर्वर पर सेव करें */
+    var edits = Object.assign({}, (window.__sharedState && window.__sharedState.postEdits) || {});
+    edits['pool:' + poolKey] = { title: newTitle, content: newContent };
+    showToast('⏳ संपादन सर्वर पर सेव हो रहा है…');
+    await _mepPushShared('postEdits', edits, '✅ पोस्ट संपादित हो गई — सभी विज़िटर्स को अपडेट दिखेगा।');
+    return;
+  }
   showToast('✅ पोस्ट सफलतापूर्वक संपादित की गई! — ' + (isShared ? 'सभी विज़िटर्स को अपडेट दिखेगा।' : 'स्थानीय बदलाव।'));
 }
 
@@ -6597,14 +6690,23 @@ function confirmPromote() {
       }
     }
 
-    publishToNewsSection({
+    /* 🆕 सर्वर की साझा सूची में जोड़ें — तब सभी डिवाइस पर कार्ड दिखेगा */
+    var _entry = {
+      key: _postKey(post) || ('t:' + titleVal),
       title: titleVal,
       summary: summaryVal,
       category: categoryVal || 'पाठक रिपोर्ट',
       author: authorVal || 'पाठक संवाददाता',
       city: city,
-      photoSrc: photoSrc
-    });
+      postId: (post && post.hasAttribute('data-shared')) ? (post.getAttribute('data-id') || '') : '',
+      photoSrc: /^https?:\/\//i.test(photoSrc) ? photoSrc : '',
+      ts: Date.now()
+    };
+    var _list = _sharedPromotedList().filter(function(e) { return e.key !== _entry.key; });
+    _list.push(_entry);
+    window.__sharedState = Object.assign({}, window.__sharedState || {}, { promoted: _list });
+    renderPromotedFromState();                    /* इसी डिवाइस पर तुरंत दिखाएँ */
+    _mepPushShared('promoted', _list, '✅ समाचार सेक्शन में सभी डिवाइस पर प्रकाशित हो गई!');
 
     if (post) {
       var existing = post.querySelector('.promoted-label-badge');
@@ -6621,7 +6723,7 @@ function confirmPromote() {
 
     closePromoteModal();
     loadPostsIntoPanel();
-    showToast('✅ पोस्ट समाचार के रूप में प्रकाशित की गई!');
+    showToast('⏳ समाचार सर्वर पर प्रकाशित हो रहा है…');
 
     setTimeout(function() {
       // Scroll to inline section in main news area (primary)
@@ -6675,12 +6777,15 @@ function publishToNewsSection(data) {
   const inlineSection = document.getElementById('promoted-news-inline');
   if (inlineSection) inlineSection.style.display = 'block';
 
-  const now = new Date();
+  const now = data.ts ? new Date(data.ts) : new Date();
   const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   const months = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
   const dateStr = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
 
   const imgSrc = data.photoSrc || getPromoteImage(data.category);
+  /* 🆕 सुरक्षा: टेक्स्ट को HTML में बदलने से पहले escape करें */
+  const _e = function(t) { return _mepEscText(t == null ? '' : t); };
+  const _eq = function(t) { return _e(t).replace(/"/g, '&quot;'); };
 
   const card = document.createElement('div');
   card.className = 'promoted-card';
@@ -6688,13 +6793,13 @@ function publishToNewsSection(data) {
 
   card.innerHTML = `
     <div class="promoted-badge">📰 पाठक संवाददाता</div>
-    <img src="${imgSrc}" class="promoted-photo" alt="${data.title}" onerror="this.src='https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80'">
-    <div style="font-family:'Noto Sans Devanagari',sans-serif;font-size:10px;font-weight:700;color:var(--red);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">${data.category}</div>
-    <div class="promoted-headline">${data.title}</div>
-    <div class="promoted-summary">${data.summary}</div>
+    <img src="${_eq(imgSrc)}" class="promoted-photo" alt="${_eq(data.title)}" onerror="this.src='https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80'">
+    <div style="font-family:'Noto Sans Devanagari',sans-serif;font-size:10px;font-weight:700;color:var(--red);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">${_e(data.category)}</div>
+    <div class="promoted-headline">${_e(data.title)}</div>
+    <div class="promoted-summary">${_e(data.summary)}</div>
     <div class="promoted-meta">
-      <span>✒ ${data.author}</span>
-      ${data.city ? '<span>📍 ' + data.city + '</span>' : ''}
+      <span>✒ ${_e(data.author)}</span>
+      ${data.city ? '<span>📍 ' + _e(data.city) + '</span>' : ''}
       <span>🕐 ${timeStr}</span>
       <span style="color:var(--ink-soft)">${dateStr}</span>
     </div>

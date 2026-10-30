@@ -11,6 +11,8 @@
         { key:"briefs",    value:{items:[str|null ×6]} }
         { key:"editorial", value:{title,quote,body} }
         { key:"customEditorials", value:[{category,title,quote,body}] }
+        { key:"promoted",  value:[{key,title,summary,category,author,city,postId?,photoSrc?,ts}] }  ← पाठक पोस्ट → समाचार
+        { key:"postEdits", value:{ "<पोस्ट key>": {title,content} } }   ← संपादित डेमो/पूल पोस्ट
         { key:"<ऊपर में से कोई>", reset:true }   → ऑटो मोड पर वापस
 
    PIN: Netlify → Environment variables में EDITOR_PIN (न हो तो नीचे का डिफ़ॉल्ट)
@@ -18,7 +20,7 @@
 import { getStore } from "@netlify/blobs";
 
 const PIN = process.env.EDITOR_PIN || "Satya@2026";
-const KEYS = ["news", "briefs", "editorial", "customEditorials"];
+const KEYS = ["news", "briefs", "editorial", "customEditorials", "promoted", "postEdits"];
 const MAX_IMG_BYTES = 1.5 * 1024 * 1024;
 const OWN_IMG = /^\/\.netlify\/functions\/sharedstate\?img=[0-4](&v=\d+)?$/;
 
@@ -123,6 +125,32 @@ export default async (req) => {
           body: cleanHtml(a && a.body),
         }))
         .filter((a) => a.title && a.body);
+    }
+
+    else if (key === "promoted") {
+      const list = Array.isArray(body.value) ? body.value.slice(0, 30) : [];
+      all.state.promoted = list
+        .map((a) => ({
+          key: str(a && a.key, 300) || "",
+          title: str(a && a.title, 300) || "",
+          summary: str(a && a.summary, 800) || "",
+          category: str(a && a.category, 80) || "पाठक रिपोर्ट",
+          author: str(a && a.author, 120) || "पाठक संवाददाता",
+          city: str(a && a.city, 120) || "",
+          postId: str(a && a.postId, 120) || "",
+          photoSrc: /^https?:\/\//i.test((a && a.photoSrc) || "") ? String(a.photoSrc).slice(0, 1000) : "",
+          ts: Number(a && a.ts) || Date.now(),
+        }))
+        .filter((a) => a.title && a.summary);
+    } else if (key === "postEdits") {
+      const src = body.value && typeof body.value === "object" && !Array.isArray(body.value) ? body.value : {};
+      const out = {};
+      for (const k of Object.keys(src).slice(0, 60)) {
+        const v = src[k] || {};
+        const title = str(v.title, 300), content = str(v.content, 5000);
+        if (title && content) out[String(k).slice(0, 300)] = { title, content };
+      }
+      all.state.postEdits = out;
     }
 
     all.updated = Date.now();
